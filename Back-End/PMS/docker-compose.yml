@@ -1,0 +1,19 @@
+services:
+  pms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pms-service
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    env_file:
+      - .env.docker
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - pms-network
+
+networks:
+  pms-network:
+    driver: bridge
