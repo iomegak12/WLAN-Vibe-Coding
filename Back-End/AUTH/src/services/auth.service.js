@@ -101,7 +101,7 @@ const login = async (email, password, ipAddress, userAgent) => {
 
 /**
  * Logout User
- * @param {String} refreshToken - Refresh token to revoke
+ * @param {String} refreshToken - Refresh token to revoke (optional)
  * @param {String} userId - User ID (optional, for revoking all tokens)
  * @returns {Promise<void>}
  */
@@ -116,14 +116,13 @@ const logout = async (refreshToken, userId = null) => {
       await tokenService.revokeAllUserTokens(userId);
       logger.info(`All tokens revoked for user: ${userId}`);
     } else {
-      const error = new Error('Refresh token or user ID required for logout');
-      error.statusCode = 400;
-      error.code = ERROR_CODES.VALIDATION_ERROR;
-      throw error;
+      // No token or userId provided - this is OK, user is already logged out
+      logger.info('Logout called with no token or userId - no action needed');
     }
   } catch (error) {
     logger.error('Logout error:', error);
-    throw error;
+    // Don't throw error for logout - log it and continue
+    // User should always be able to logout even if token is invalid
   }
 };
 

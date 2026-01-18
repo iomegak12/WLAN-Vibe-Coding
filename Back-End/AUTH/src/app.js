@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const { errorHandler, notFoundHandler } = require('./middlewares/errorHandler.middleware');
 const logger = require('./config/logger');
 const setupSwagger = require('./config/swagger');
@@ -23,14 +24,34 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
+// Support for credentials (httpOnly cookies) requires specific origin, not wildcard
 const corsOptions = {
-  origin: process.env.CORS_ORIGINS === '*' 
-    ? '*' 
-    : process.env.CORS_ORIGINS.split(','),
-  credentials: true,
+  origin: function (origin, callback) {
+    const allowedOrigins = process.env.CORS_ORIGINS === '*' 
+      ? ['*'] 
+      : process.env.CORS_ORIGINS.split(',').map(o => o.trim());
+    
+    // Allow requests with no origin (like mobile apps, Postman, curl)
+    if (!origin || allowedOrigins.includes('*')) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true, // Allow cookies to be sent
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
+
+// Cookie parser middleware (for httpOnly cookies)
+app.use(cookieParser());
 
 // Body parser middleware
 app.use(express.json({ limit: '10mb' }));

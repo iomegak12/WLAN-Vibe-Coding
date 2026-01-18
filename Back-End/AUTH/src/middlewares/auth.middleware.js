@@ -12,7 +12,7 @@ const logger = require('../config/logger');
  * Extracts and verifies JWT from Authorization header
  * Attaches decoded user data to req.user
  */
-const authenticate = async (req, res, next) => {
+const authenticate = (req, res, next) => {
   try {
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
@@ -20,8 +20,8 @@ const authenticate = async (req, res, next) => {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
-        code: ERROR_CODES.UNAUTHORIZED,
-        message: MESSAGES.AUTH.TOKEN_MISSING,
+        code: ERROR_CODES.MISSING_TOKEN,
+        message: 'No authentication token provided',
       });
     }
 
@@ -31,12 +31,12 @@ const authenticate = async (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         success: false,
-        code: ERROR_CODES.UNAUTHORIZED,
-        message: MESSAGES.AUTH.TOKEN_MISSING,
+        code: ERROR_CODES.MISSING_TOKEN,
+        message: 'No authentication token provided',
       });
     }
 
-    // Verify token
+    // Verify token (synchronous operation)
     const decoded = verifyAccessToken(token);
 
     // Attach user data to request
@@ -50,27 +50,25 @@ const authenticate = async (req, res, next) => {
     logger.info(`User authenticated: ${decoded.email}`);
     next();
   } catch (error) {
-    logger.error('Authentication error:', error);
+    logger.error('Authentication error:', error.message);
 
+    // Determine appropriate error response
+    let errorMessage = MESSAGES.ERROR.TOKEN_INVALID;
+    let errorCode = ERROR_CODES.INVALID_TOKEN;
+    
     if (error.message === 'Access token expired') {
-      return res.status(401).json({
-        success: false,
-        code: ERROR_CODES.UNAUTHORIZED,
-        message: MESSAGES.AUTH.TOKEN_EXPIRED,
-      });
+      errorMessage = 'Access token has expired';
+      errorCode = ERROR_CODES.EXPIRED_TOKEN;
     } else if (error.message === 'Invalid access token') {
-      return res.status(401).json({
-        success: false,
-        code: ERROR_CODES.UNAUTHORIZED,
-        message: MESSAGES.AUTH.INVALID_TOKEN,
-      });
-    } else {
-      return res.status(401).json({
-        success: false,
-        code: ERROR_CODES.UNAUTHORIZED,
-        message: MESSAGES.AUTH.INVALID_TOKEN,
-      });
+      errorMessage = MESSAGES.ERROR.TOKEN_INVALID;
+      errorCode = ERROR_CODES.INVALID_TOKEN;
     }
+
+    return res.status(401).json({
+      success: false,
+      code: errorCode,
+      message: errorMessage,
+    });
   }
 };
 
@@ -79,7 +77,7 @@ const authenticate = async (req, res, next) => {
  * Similar to authenticate but doesn't fail if no token is provided
  * Useful for endpoints that have different behavior for authenticated vs unauthenticated users
  */
-const optionalAuthenticate = async (req, res, next) => {
+const optionalAuthenticate = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 

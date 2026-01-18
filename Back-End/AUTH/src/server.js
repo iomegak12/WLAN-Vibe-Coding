@@ -65,7 +65,14 @@ async function startServer() {
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason, promise) => {
       logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-      gracefulShutdown('UNHANDLED_REJECTION');
+      
+      // In development, log the error but don't crash the server
+      // In production, initiate graceful shutdown
+      if (NODE_ENV === 'production') {
+        gracefulShutdown('UNHANDLED_REJECTION');
+      } else {
+        logger.warn('Server continues running in development mode despite unhandled rejection');
+      }
     });
 
   } catch (error) {

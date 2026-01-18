@@ -1,0 +1,42 @@
+2026-01-14 19:18:18 [info]: Logger initialized {"enabled":true,"type":"CONSOLE"}
+2026-01-14 19:18:18 [info]: ✅ Connected to MongoDB
+2026-01-14 19:18:18 [info]: 🗑️  Cleared existing data
+2026-01-14 19:18:18 [info]: ✅ 7 roles inserted successfully
+2026-01-14 19:18:18 [info]: ✅ Default admin user created successfully
+2026-01-14 19:18:18 [info]: ✅ 25 sample users created successfully
+2026-01-14 19:18:18 [info]:
+2026-01-14 19:18:18 [info]: =====================================
+2026-01-14 19:18:18 [info]:          SEEDING COMPLETED
+2026-01-14 19:18:18 [info]: =====================================
+2026-01-14 19:18:18 [info]:
+2026-01-14 19:18:18 [info]: 👤 ADMIN CREDENTIALS:
+2026-01-14 19:18:18 [info]: 📧 Email: jtdhamodharan@gmail.com
+2026-01-14 19:18:18 [info]: 🔑 Password: Prestige123!
+2026-01-14 19:18:18 [info]:
+2026-01-14 19:18:18 [info]: 👥 SAMPLE USERS (25 users created):
+2026-01-14 19:18:18 [info]: 🔑 Default Password: User123!@#
+2026-01-14 19:18:18 [info]:
+2026-01-14 19:18:18 [info]: 📊 Users by Role:
+2026-01-14 19:18:18 [info]:    Warehouse Manager: 4 users
+2026-01-14 19:18:18 [info]:    Inventory Manager: 4 users
+2026-01-14 19:18:18 [info]:    Procurement Officer: 3 users
+2026-01-14 19:18:18 [info]:    Warehouse Staff: 7 users
+2026-01-14 19:18:18 [info]:    Product Manager: 4 users
+2026-01-14 19:18:18 [info]:    Auditor/Viewer: 3 users
+2026-01-14 19:18:18 [info]:
+2026-01-14 19:18:18 [info]: 📋 Sample User Emails:
+2026-01-14 19:18:18 [info]:    rajesh.kumar@wlan.com (Warehouse Manager)
+2026-01-14 19:18:18 [info]:    vikram.singh@wlan.com (Inventory Manager)
+2026-01-14 19:18:18 [info]:    arjun.mehta@wlan.com (Procurement Officer)
+2026-01-14 19:18:18 [info]:    suresh.rao@wlan.com (Warehouse Staff)
+2026-01-14 19:18:18 [info]:    nikhil.menon@wlan.com (Product Manager)
+2026-01-14 19:18:18 [info]:    rahul.chopra@wlan.com (Auditor/Viewer)
+2026-01-14 19:18:18 [info]:
+2026-01-14 19:18:18 [info]: ⚠️  Note: 2 users are inactive (for testing)
+2026-01-14 19:18:18 [info]:    - sneha.reddy@wlan.com
+2026-01-14 19:18:18 [info]:    - ritu.jain@wlan.com
+2026-01-14 19:18:18 [info]:
+2026-01-14 19:18:18 [info]: ⚠️  Please change passwords after first login!
+2026-01-14 19:18:18 [info]: =====================================
+2026-01-14 19:18:18 [info]:
+2026-01-14 19:18:18 [info]: 👋 MongoDB connection closed

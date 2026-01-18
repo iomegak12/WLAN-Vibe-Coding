@@ -3,7 +3,9 @@ Product API Routes
 """
 
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import StreamingResponse
 from typing import Optional, List
+import io
 from app.config.database import Database
 from app.repositories.product import ProductRepository
 from app.repositories.category import CategoryRepository
@@ -14,6 +16,8 @@ from app.schemas.common import PaginationParams
 from app.middleware.auth import get_current_user, get_optional_user
 from app.utils.responses import success_response, created_response
 from app.utils.logger import logger
+from app.utils.barcode_utils import generate_qr_code, generate_barcode, cleanup_sku_for_barcode
+from app.utils.exceptions import NotFoundError
 
 
 router = APIRouter(prefix="/products", tags=["Products"])
@@ -315,4 +319,83 @@ async def delete_product(
     return success_response(
         data={"id": product_id, "deleted": True},
         message="Product deleted successfully"
+    )
+
+
+@router.get(
+    "/{product_id}/qr",
+    response_class=StreamingResponse,
+    summary="Get product QR code",
+    description="Generate and download QR code for a product."
+)
+async def get_product_qr_code(
+    product_id: str,
+    current_user: dict = Depends(get_optional_user),
+    service: ProductService = Depends(get_product_service)
+):
+    """
+    Get product QR code image.
+    
+    - **product_id**: Product ID (required)
+    
+    Returns QR code image as PNG.
+    """
+    logger.info(f"Generating QR code for product: {product_id}")
+    
+    # Get product
+    product = await service.get_product(product_id)
+    
+    # Generate QR code
+    qr_buffer, qr_filename = generate_qr_code(product.sku)
+    
+    # Reset buffer position
+    qr_buffer.seek(0)
+    
+    return StreamingResponse(
+        qr_buffer,
+        media_type="image/png",
+        headers={
+            "Content-Disposition": f"inline; filename={qr_filename}",
+            "Cache-Control": "public, max-age=3600"
+        }
+    )
+
+
+@router.get(
+    "/{product_id}/barcode",
+    response_class=StreamingResponse,
+    summary="Get product barcode",
+    description="Generate and download barcode for a product."
+)
+async def get_product_barcode(
+    product_id: str,
+    current_user: dict = Depends(get_optional_user),
+    service: ProductService = Depends(get_product_service)
+):
+    """
+    Get product barcode image.
+    
+    - **product_id**: Product ID (required)
+    
+    Returns barcode image as PNG.
+    """
+    logger.info(f"Generating barcode for product: {product_id}")
+    
+    # Get product
+    product = await service.get_product(product_id)
+    
+    # Generate barcode
+    barcode_sku = cleanup_sku_for_barcode(product.sku)
+    barcode_buffer, barcode_filename = generate_barcode(barcode_sku)
+    
+    # Reset buffer position
+    barcode_buffer.seek(0)
+    
+    return StreamingResponse(
+        barcode_buffer,
+        media_type="image/png",
+        headers={
+            "Content-Disposition": f"inline; filename={barcode_filename}",
+            "Cache-Control": "public, max-age=3600"
+        }
     )

@@ -14,6 +14,7 @@ from app.schemas.common import PaginationParams
 from app.utils.logger import logger
 from app.utils.exceptions import ValidationError, NotFoundError, DuplicateError
 from app.utils.barcode_utils import generate_qr_code, generate_barcode, cleanup_sku_for_barcode
+from app.utils.unsplash_utils import UnsplashService
 from app.config.database import Database
 
 
@@ -39,6 +40,7 @@ class ProductService:
         self.repository = repository
         self.category_repository = category_repository
         self.subcategory_repository = subcategory_repository
+        self.unsplash_service = UnsplashService()
     
     async def _generate_sku(
         self,
@@ -111,6 +113,43 @@ class ProductService:
             # Don't fail product creation if code generation fails
             return None, None
     
+    async def _fetch_unsplash_images(
+        self,
+        product_name: str,
+        brand: str,
+        category_name: str,
+        count: int = 6
+    ) -> List[str]:
+        """
+        Fetch product images from Unsplash and store URLs.
+        
+        Args:
+            product_name: Product name
+            brand: Brand name
+            category_name: Category name
+            count: Number of images to fetch
+        
+        Returns:
+            List of image URLs
+        """
+        try:
+            images = await self.unsplash_service.get_product_images(
+                product_name=product_name,
+                brand=brand,
+                category=category_name,
+                count=count
+            )
+            
+            # Extract image URLs
+            image_urls = [img.get("url") for img in images if img.get("url")]
+            
+            logger.info(f"Fetched {len(image_urls)} Unsplash images for product: {product_name}")
+            return image_urls
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch Unsplash images: {str(e)}")
+            return []
+    
     async def create_product(
         self,
         product_data: ProductCreate,
@@ -157,6 +196,14 @@ class ProductService:
         # Generate QR and barcode
         qr_code, barcode = await self._generate_codes(sku)
         
+        # Fetch Unsplash images
+        unsplash_images = await self._fetch_unsplash_images(
+            product_name=product_data.name,
+            brand=product_data.brand,
+            category_name=category.get("name", ""),
+            count=6
+        )
+        
         # Prepare document
         product_doc = {
             "sku": sku,
@@ -179,7 +226,7 @@ class ProductService:
             "tags": product_data.tags,
             "qrCode": qr_code,
             "barcode": barcode,
-            "images": [],  # Images added separately via upload endpoint
+            "images": unsplash_images,  # Unsplash images
             "isActive": product_data.isActive,
             "isDeleted": False,
             "createdBy": ObjectId(user_id) if user_id else None,

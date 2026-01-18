@@ -74,6 +74,11 @@ class Settings(BaseSettings):
     sku_sequence_start: int = Field(default=1, alias="SKU_SEQUENCE_START")
     sku_sequence_pad: int = Field(default=4, alias="SKU_SEQUENCE_PAD")
     
+    # Unsplash API Configuration
+    unsplash_access_key: str = Field(default="", alias="UNSPLASH_ACCESS_KEY")
+    unsplash_secret_key: str = Field(default="", alias="UNSPLASH_SECRET_KEY")
+    unsplash_application_id: str = Field(default="", alias="UNSPLASH_APPLICATION_ID")
+    
     class Config:
         env_file = ".env"
         case_sensitive = False
