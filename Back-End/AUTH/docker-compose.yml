@@ -6,17 +6,15 @@ services:
     image: mongo:7.0
     container_name: auth-mongodb
     restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password123
-      MONGO_INITDB_DATABASE: auth_db
+    env_file:
+      - .env.docker
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
     networks:
-      - auth-network
+      - wlan-network
 
   # Auth Service Application
   auth-service:
@@ -34,10 +32,10 @@ services:
     depends_on:
       - mongodb
     networks:
-      - auth-network
+      - wlan-network
 
 networks:
-  auth-network:
+  wlan-network:
     driver: bridge
 
 volumes:

@@ -1,0 +1,239 @@
+services:
+  # =====================================================
+  # MongoDB Service (Shared)
+  # =====================================================
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      # MongoDB Root Credentials
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: auth_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - wlan-network
+
+  # =====================================================
+  # Mongo Express (MongoDB Admin UI)
+  # =====================================================
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      # MongoDB Connection
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password123
+      ME_CONFIG_MONGODB_URL: mongodb://admin:password123@mongodb:27017/
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      
+      # Basic Auth for Mongo Express UI
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+      
+      # Site Configuration
+      ME_CONFIG_SITE_BASEURL: /
+    depends_on:
+      - mongodb
+    networks:
+      - wlan-network
+
+  # =====================================================
+  # AUTH Service
+  # =====================================================
+  auth-service:
+    build:
+      context: ./Back-End/AUTH
+      dockerfile: Dockerfile
+    image: iomega/auth-service
+    container_name: auth-service
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      # Server Configuration
+      NODE_ENV: development
+      PORT: 5001
+      
+      # Database Configuration
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/auth_db?authSource=admin
+      
+      # JWT Configuration
+      JWT_ACCESS_SECRET: your-super-secret-jwt-access-key-change-in-production-min-32-chars
+      JWT_REFRESH_SECRET: your-super-secret-jwt-refresh-key-change-in-production-min-32-chars
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      JWT_ISSUER: wlan-auth-service
+      JWT_AUDIENCE: wlan-services
+      
+      # Email Configuration
+      EMAIL_ENABLED: true
+      EMAIL_HOST: smtp.gmail.com
+      EMAIL_PORT: 587
+      EMAIL_SECURE: false
+      EMAIL_USER: your-email@gmail.com
+      EMAIL_PASSWORD: your-app-password
+      EMAIL_FROM_NAME: WLAN Corporation
+      EMAIL_FROM_ADDRESS: your-email@gmail.com
+      
+      # CORS Configuration
+      CORS_ORIGINS: http://localhost:3000,http://localhost:4200,http://localhost:8080
+      
+      # Logging Configuration
+      LOG_TYPE: CONSOLE
+      LOG_LEVEL: INFO
+      
+      # Rate Limiting
+      RATE_LIMIT_ENABLED: true
+      
+      # File Upload
+      UPLOAD_DIR: uploads/profiles
+      MAX_FILE_SIZE: 2097152
+      ALLOWED_FILE_TYPES: .jpg,.jpeg,.png
+      
+      # Pagination
+      DEFAULT_PAGE_SIZE: 10
+      MAX_PAGE_SIZE: 100
+    volumes:
+      - auth_uploads:/app/uploads
+    depends_on:
+      - mongodb
+    networks:
+      - wlan-network
+
+  # =====================================================
+  # PMS Service (Product Management System)
+  # =====================================================
+  pms-service:
+    build:
+      context: ./Back-End/PMS
+      dockerfile: Dockerfile
+    image: iomega/pms-service
+    container_name: pms-service
+    restart: unless-stopped
+    ports:
+      - "5002:5002"
+    environment:
+      # Application Configuration
+      APP_NAME: PMS Service
+      APP_VERSION: 0.1.0
+      APP_ENV: production
+      APP_HOST: 0.0.0.0
+      APP_PORT: 5002
+      DEBUG: False
+      
+      # Logging Configuration
+      LOG_LEVEL: INFO
+      LOG_TYPE: FILE
+      
+      # MongoDB Configuration
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/pms_db?authSource=admin
+      MONGODB_DATABASE: pms_db
+      MONGODB_GRIDFS_BUCKET: pms_files
+      
+      # AUTH Service Configuration
+      AUTH_SERVICE_URL: http://auth-service:5001
+      AUTH_VERIFY_ENDPOINT: /api/v1/auth/verify
+      
+      # Rate Limiting Configuration
+      RATE_LIMIT_ENABLED: True
+      RATE_LIMIT_PER_MINUTE: 100
+      
+      # CORS Configuration
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:8080
+      
+      # API Documentation
+      API_DOCS_URL: /docs
+      API_REDOC_URL: /redoc
+      OPENAPI_URL: /openapi.json
+      
+      # Seed Data Configuration
+      LOAD_SEED_DATA: False
+      
+      # File Upload Configuration
+      MAX_UPLOAD_SIZE_MB: 5
+      ALLOWED_IMAGE_FORMATS: image/jpeg,image/png,image/webp
+      
+      # QR Code Configuration
+      QR_CODE_SIZE: 300
+      QR_CODE_ERROR_CORRECTION: H
+      
+      # Barcode Configuration
+      BARCODE_WIDTH: 400
+      BARCODE_HEIGHT: 200
+      
+      # SKU Configuration
+      SKU_SEQUENCE_START: 1
+      SKU_SEQUENCE_PAD: 4
+      
+      # Unsplash API Configuration
+      UNSPLASH_ACCESS_KEY: AZBKfvSErVqd2VDa4Sd04MSCLxzXBdNtozlPJ3sEy6E
+      UNSPLASH_SECRET_KEY: K7qWwH3oVFEw1i6ynUsReQ9h4ZlZ30eMp1NIHXWZBMo
+      UNSPLASH_APPLICATION_ID: 323710
+    depends_on:
+      - mongodb
+      - auth-service
+    networks:
+      - wlan-network
+
+  # =====================================================
+  # Frontend Web Application (Production)
+  # =====================================================
+  wlan-web:
+    build:
+      context: ./Front-End/Web
+      dockerfile: Dockerfile
+    image: iomega/wlan-web
+    container_name: wlan-web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      # API URLs - pointing to Docker network services
+      VITE_AUTH_API_URL: http://localhost:5001/api/v1
+      VITE_PMS_API_URL: http://localhost:5002/api/v1
+      
+      # Application Settings
+      VITE_APP_NAME: WLAN Warehouse Management
+      
+      # Session Configuration (in milliseconds)
+      VITE_SESSION_TIMEOUT: 1800000
+      VITE_TOKEN_REFRESH_INTERVAL: 300000
+      
+      # Node Environment
+      NODE_ENV: production
+    depends_on:
+      - auth-service
+      - pms-service
+    networks:
+      - wlan-network
+
+# =====================================================
+# Networks
+# =====================================================
+networks:
+  wlan-network:
+    driver: bridge
+    name: wlan-network
+
+# =====================================================
+# Volumes
+# =====================================================
+volumes:
+  mongodb_data:
+    driver: local
+    name: mongodb-data
+  mongodb_config:
+    driver: local
+    name: mongodb-config
+  auth_uploads:
+    driver: local
+    name: auth-uploads

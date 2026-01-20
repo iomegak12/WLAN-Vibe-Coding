@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # Vite React Web Application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wlan-warehouse-web
+    ports:
+      - "8080:80"
+    env_file:
+      - .env.docker
+    restart: unless-stopped
+    networks:
+      - wlan-network
+
+  # Development service (optional - for development with hot reload)
+  web-dev:
+    image: node:20-alpine
+    container_name: wlan-warehouse-web-dev
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    command: sh -c "npm install && npm run dev -- --host"
+    env_file:
+      - .env.docker
+    networks:
+      - wlan-network
+    profiles:
+      - dev
+
+networks:
+  wlan-network:
+    driver: bridge
