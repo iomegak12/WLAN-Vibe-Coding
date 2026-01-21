@@ -2,7 +2,7 @@
 # Traefik with Certificate Download Support
 # =====================================================
 
-FROM traefik:v3.2
+FROM traefik:v2.11
 
 # Install wget and unzip for certificate download
 RUN apk add --no-cache wget unzip
