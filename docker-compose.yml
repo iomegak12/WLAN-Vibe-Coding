@@ -1,5 +1,32 @@
 services:
   # =====================================================
+  # Traefik Reverse Proxy with SSL
+  # =====================================================
+  traefik:
+    build:
+      context: ./traefik
+      dockerfile: Dockerfile
+    image: iomega/traefik
+    container_name: traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"      # HTTP (redirects to HTTPS)
+      - "443:443"    # HTTPS
+      - "8080:8080"  # Traefik Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_certs:/etc/traefik/certs
+    networks:
+      - wlan-network
+    labels:
+      - "traefik.enable=true"
+      # Dashboard
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.lan-demos.work.gd`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls=true"
+
+  # =====================================================
   # MongoDB Service (Shared)
   # =====================================================
   mongodb:
@@ -56,8 +83,8 @@ services:
     image: iomega/auth-service
     container_name: auth-service
     restart: unless-stopped
-    ports:
-      - "5001:5001"
+    expose:
+      - "5001"
     environment:
       # Server Configuration
       NODE_ENV: development
@@ -106,8 +133,15 @@ services:
       - auth_uploads:/app/uploads
     depends_on:
       - mongodb
+      - traefik
     networks:
       - wlan-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`auth.lan-demos.work.gd`)"
+      - "traefik.http.routers.auth.entrypoints=websecure"
+      - "traefik.http.routers.auth.tls=true"
+      - "traefik.http.services.auth.loadbalancer.server.port=5001"
 
   # =====================================================
   # PMS Service (Product Management System)
@@ -119,8 +153,8 @@ services:
     image: iomega/pms-service
     container_name: pms-service
     restart: unless-stopped
-    ports:
-      - "5002:5002"
+    expose:
+      - "5002"
     environment:
       # Application Configuration
       APP_NAME: PMS Service
@@ -181,8 +215,15 @@ services:
     depends_on:
       - mongodb
       - auth-service
+      - traefik
     networks:
       - wlan-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pms.rule=Host(`pms.lan-demos.work.gd`)"
+      - "traefik.http.routers.pms.entrypoints=websecure"
+      - "traefik.http.routers.pms.tls=true"
+      - "traefik.http.services.pms.loadbalancer.server.port=5002"
 
   # =====================================================
   # Frontend Web Application (Production)
@@ -200,13 +241,20 @@ services:
     image: iomega/wlan-web
     container_name: wlan-web
     restart: unless-stopped
-    ports:
-      - "8080:80"
+    expose:
+      - "80"
     depends_on:
       - auth-service
       - pms-service
+      - traefik
     networks:
       - wlan-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`web.lan-demos.work.gd`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls=true"
+      - "traefik.http.services.web.loadbalancer.server.port=80"
 
   # =====================================================
   # AUTH Database Seeder (Runs once)
@@ -298,3 +346,6 @@ volumes:
   auth_uploads:
     driver: local
     name: auth-uploads
+  traefik_certs:
+    driver: local
+    name: traefik-certs
