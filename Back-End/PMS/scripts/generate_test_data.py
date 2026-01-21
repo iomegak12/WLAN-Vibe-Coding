@@ -6,15 +6,16 @@ Generates 100 products with diverse categories, subcategories, and attributes
 import random
 import httpx
 import asyncio
+import os
 from datetime import datetime, timedelta
 
-# API Configuration
-BASE_URL = "http://localhost:5002/api/v1"
-AUTH_SERVICE_URL = "http://localhost:5001/api/v1/auth"
+# API Configuration - Read from environment variables with fallback to localhost
+BASE_URL = os.getenv("PMS_API_URL", "http://localhost:5002/api/v1")
+AUTH_SERVICE_URL = os.getenv("AUTH_API_URL", "http://localhost:5001/api/v1/auth")
 
 # Login credentials
-LOGIN_EMAIL = "jtdhamodharan@gmail.com"
-LOGIN_PASSWORD = "Prestige123!"
+LOGIN_EMAIL = os.getenv("LOGIN_EMAIL", "jtdhamodharan@gmail.com")
+LOGIN_PASSWORD = os.getenv("LOGIN_PASSWORD", "Prestige123!")
 
 # Will be populated after login
 AUTH_TOKEN = None
@@ -509,11 +510,16 @@ async def main():
     print(f"🔗 PMS Service: {BASE_URL}")
     print("\n")
     
-    try:
-        input("Press Enter to start generation (or Ctrl+C to cancel)...")
-    except KeyboardInterrupt:
-        print("\n\n❌ Cancelled by user")
-        return
+    # Skip interactive prompt in non-interactive environments (Docker, CI/CD)
+    import sys
+    if sys.stdin.isatty():
+        try:
+            input("Press Enter to start generation (or Ctrl+C to cancel)...")
+        except KeyboardInterrupt:
+            print("\n\n❌ Cancelled by user")
+            return
+    else:
+        print("🤖 Running in non-interactive mode, starting automatically...\n")
     
     generator = DataGenerator()
     await generator.generate_all_data()

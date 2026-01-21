@@ -1,0 +1,21 @@
+# =====================================================
+# PMS Database Seeder Dockerfile
+# Standalone container for seeding PMS database
+# =====================================================
+
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install httpx dependency
+RUN pip install --no-cache-dir httpx
+
+# Copy the seeder script
+COPY scripts/generate_test_data.py ./scripts/
+
+# Set Python environment
+ENV PYTHONUNBUFFERED=1
+
+# Run the seeder script
+CMD ["python", "scripts/generate_test_data.py"]

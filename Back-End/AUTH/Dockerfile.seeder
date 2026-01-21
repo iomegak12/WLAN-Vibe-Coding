@@ -1,0 +1,27 @@
+# =====================================================
+# AUTH Database Seeder Dockerfile
+# Standalone container for seeding AUTH database
+# =====================================================
+
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install --only=production --silent
+
+# Copy necessary application files
+COPY src/models ./src/models
+COPY src/utils ./src/utils
+COPY src/config ./src/config
+COPY scripts/seed-with-users.js ./scripts/
+
+# Set environment variable
+ENV NODE_ENV=development
+
+# Run the seeder script
+CMD ["node", "scripts/seed-with-users.js"]

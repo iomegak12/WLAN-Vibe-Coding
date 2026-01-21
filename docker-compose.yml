@@ -85,7 +85,7 @@ services:
       EMAIL_FROM_ADDRESS: your-email@gmail.com
       
       # CORS Configuration
-      CORS_ORIGINS: http://localhost:3000,http://localhost:4200,http://localhost:8080
+      CORS_ORIGINS: "*"
       
       # Logging Configuration
       LOG_TYPE: CONSOLE
@@ -148,7 +148,7 @@ services:
       RATE_LIMIT_PER_MINUTE: 100
       
       # CORS Configuration
-      CORS_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:8080
+      CORS_ORIGINS: "*"
       
       # API Documentation
       API_DOCS_URL: /docs
@@ -213,6 +213,75 @@ services:
     depends_on:
       - auth-service
       - pms-service
+    networks:
+      - wlan-network
+
+  # =====================================================
+  # AUTH Database Seeder (Runs once)
+  # =====================================================
+  auth-seeder:
+    build:
+      context: ./Back-End/AUTH
+      dockerfile: Dockerfile.seeder
+    image: iomega/auth-seeder
+    container_name: auth-seeder
+    restart: "no"
+    environment:
+      # MongoDB Configuration
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/auth_db?authSource=admin
+      NODE_ENV: development
+      
+      # JWT Configuration (needed for models)
+      JWT_ACCESS_SECRET: your-super-secret-jwt-access-key-change-in-production-min-32-chars
+      JWT_REFRESH_SECRET: your-super-secret-jwt-refresh-key-change-in-production-min-32-chars
+    command: >
+      sh -c "
+        echo '⏳ Waiting for AUTH service to be ready...' &&
+        sleep 10 &&
+        echo '🌱 Running AUTH database seeder...' &&
+        node scripts/seed-with-users.js &&
+        echo '✅ AUTH seeding completed!'
+      "
+    depends_on:
+      - mongodb
+      - auth-service
+    networks:
+      - wlan-network
+
+  # =====================================================
+  # PMS Database Seeder (Runs once)
+  # =====================================================
+  pms-seeder:
+    build:
+      context: ./Back-End/PMS
+      dockerfile: Dockerfile.seeder
+    image: iomega/pms-seeder
+    container_name: pms-seeder
+    restart: "no"
+    environment:
+      # Python Environment
+      PYTHONUNBUFFERED: 1
+      
+      # API Configuration - Use Docker service names
+      PMS_API_URL: http://pms-service:5002/api/v1
+      AUTH_API_URL: http://auth-service:5001/api/v1/auth
+      
+      # Login Credentials
+      LOGIN_EMAIL: jtdhamodharan@gmail.com
+      LOGIN_PASSWORD: Prestige123!
+    command: >
+      sh -c "
+        echo '⏳ Waiting for PMS service to be ready...' &&
+        sleep 15 &&
+        echo '🌱 Running PMS database seeder...' &&
+        python scripts/generate_test_data.py &&
+        echo '✅ PMS seeding completed!'
+      "
+    depends_on:
+      - mongodb
+      - auth-service
+      - pms-service
+      - auth-seeder
     networks:
       - wlan-network
 
