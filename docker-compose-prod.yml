@@ -119,10 +119,10 @@ services:
       # Application Configuration
       APP_NAME: PMS Service
       APP_VERSION: 0.1.0
-      APP_ENV: production
+      APP_ENV: development
       APP_HOST: 0.0.0.0
       APP_PORT: 5002
-      DEBUG: False
+      DEBUG: True
       
       # Logging Configuration
       LOG_LEVEL: INFO
