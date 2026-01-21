@@ -196,13 +196,14 @@ class ProductService:
         # Generate QR and barcode
         qr_code, barcode = await self._generate_codes(sku)
         
-        # Fetch Unsplash images
-        unsplash_images = await self._fetch_unsplash_images(
-            product_name=product_data.name,
-            brand=product_data.brand,
-            category_name=category.get("name", ""),
-            count=6
-        )
+        # Skip Unsplash images - use empty list instead
+        # unsplash_images = await self._fetch_unsplash_images(
+        #     product_name=product_data.name,
+        #     brand=product_data.brand,
+        #     category_name=category.get("name", ""),
+        #     count=6
+        # )
+        unsplash_images = []
         
         # Prepare document
         product_doc = {
