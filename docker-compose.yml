@@ -191,25 +191,17 @@ services:
     build:
       context: ./Front-End/Web
       dockerfile: Dockerfile
+      args:
+        VITE_AUTH_API_URL: /api/v1
+        VITE_PMS_API_URL: /api/v1
+        VITE_APP_NAME: WLAN Warehouse Management
+        VITE_SESSION_TIMEOUT: 1800000
+        VITE_TOKEN_REFRESH_INTERVAL: 300000
     image: iomega/wlan-web
     container_name: wlan-web
     restart: unless-stopped
     ports:
       - "8080:80"
-    environment:
-      # API URLs - pointing to Docker network services
-      VITE_AUTH_API_URL: http://localhost:5001/api/v1
-      VITE_PMS_API_URL: http://localhost:5002/api/v1
-      
-      # Application Settings
-      VITE_APP_NAME: WLAN Warehouse Management
-      
-      # Session Configuration (in milliseconds)
-      VITE_SESSION_TIMEOUT: 1800000
-      VITE_TOKEN_REFRESH_INTERVAL: 300000
-      
-      # Node Environment
-      NODE_ENV: production
     depends_on:
       - auth-service
       - pms-service
