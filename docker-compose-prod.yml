@@ -227,9 +227,18 @@ services:
       - wlan-network
     labels:
       - "traefik.enable=true"
+      # HTTP router (redirects to HTTPS)
+      - "traefik.http.routers.web-http.rule=Host(`web.lan-demos.work.gd`)"
+      - "traefik.http.routers.web-http.entrypoints=web"
+      - "traefik.http.routers.web-http.middlewares=web-redirect"
+      # HTTPS router
       - "traefik.http.routers.web.rule=Host(`web.lan-demos.work.gd`)"
       - "traefik.http.routers.web.entrypoints=websecure"
       - "traefik.http.routers.web.tls=true"
+      # Redirect middleware
+      - "traefik.http.middlewares.web-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.web-redirect.redirectscheme.permanent=true"
+      # Service
       - "traefik.http.services.web.loadbalancer.server.port=80"
 
   # =====================================================
