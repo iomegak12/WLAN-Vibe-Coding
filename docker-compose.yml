@@ -72,6 +72,13 @@ services:
       - mongodb
     networks:
       - wlan-network
+    labels:
+      - "traefik.enable=true"
+      # Dashboard
+      - "traefik.http.routers.dashboard.rule=Host(`mongo-ui.lan-demos.work.gd`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls=true"
 
   # =====================================================
   # AUTH Service
